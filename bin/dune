@@ -6,6 +6,7 @@
   printbox
   printbox-text
   eio_main
+  ca-certs
   xdg
   cmdliner
   logs

@@ -16,10 +16,31 @@ let v root = { root; lock = Eio.Mutex.create (); pending = Hashtbl.create 13 }
 let ( / ) = Eio.Path.( / )
 let mkdirs dir = Eio.Path.mkdirs ~exists_ok:true ~perm:0o700 dir
 
+let rec rmdirs dir =
+  let contents = Eio.Path.read_dir dir in
+  let files = 
+    List.map (fun v -> 
+      let path = Eio.Path.(dir / v) in
+      Eio.Path.kind ~follow:false path, path) contents
+  in
+  List.iter (function
+    | `Regular_file, p -> Eio.Path.unlink p
+    | `Directory, p ->
+       rmdirs p;
+       Eio.Path.rmdir p
+    | _ -> failwith "rmdirs: encountered unsupported file kind"
+  ) files
+
+
 let mkdir_parent file =
   match Eio.Path.split file with
   | None -> ()
   | Some (parent, _) -> mkdirs parent
+
+let rmdir_parent file =
+  match Eio.Path.split file with
+  | None -> ()
+  | Some (parent, _) -> rmdirs parent
 
 let init t =
   mkdirs (t.root / "blobs" / "sha256");
@@ -108,6 +129,10 @@ module Blob = struct
   let get_fd ~sw t digest =
     let file = file t digest in
     Eio.Path.open_in ~sw file
+
+  let remove t digest =
+    let file = file t digest in
+    rmdir_parent file
 end
 
 module Manifest = struct
@@ -139,6 +164,10 @@ module Manifest = struct
     let src = Manifest.to_string m in
     let dst = Eio.Path.open_out ~sw ~create:(`Exclusive 0o644) file in
     Eio.Flow.copy_string src dst
+  
+  let remove t image =
+    let file = file t image in
+    rmdir_parent file
 
   let get t image =
     let file = file t image in

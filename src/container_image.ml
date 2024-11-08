@@ -8,3 +8,4 @@ let fetch = Fetch.fetch
 let list = List.list
 let checkout = Checkout.checkout
 let show = Show.show
+let delete = Delete.delete

@@ -233,7 +233,7 @@ let get_manifest ?(show = false) t d =
           let m = API.get_manifest t.client ~progress ~token:t.token image in
           Cache.Manifest.add t.cache image m));
   Cache.Manifest.get t.cache image
-
+  
 let fetch ?(show_progress = true) ?platform ~cache ~client ~domain_mgr:_
     ?username ?password image =
   Eio.Switch.run @@ fun sw ->
